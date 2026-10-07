@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Khmer Sync</string>
+    <string name="ime_name">Khmer Sync Keyboard</string>
+    <string name="subtype_name">Khmer Sync</string>
+</resources>
