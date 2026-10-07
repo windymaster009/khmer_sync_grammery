@@ -8,3 +8,8 @@ build/
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Secrets / local environment
+.env
+.env.*
+!.env.example

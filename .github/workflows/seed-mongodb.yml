@@ -1,0 +1,33 @@
+name: Seed MongoDB dictionary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MongoDB driver
+        run: python -m pip install "pymongo[srv]>=4.10,<5"
+
+      - name: Validate MongoDB secret
+        run: |
+          if [ -z "$MONGO_URI" ]; then
+            echo "Missing GitHub Actions secret: MONGO_URI"
+            exit 1
+          fi
+
+      - name: Seed Khmer dictionary
+        run: python tools/seed_mongodb.py
