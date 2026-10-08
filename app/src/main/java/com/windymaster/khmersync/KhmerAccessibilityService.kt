@@ -40,7 +40,7 @@ class KhmerAccessibilityService : AccessibilityService() {
         if (!source.isEditable || source.isPassword || event.isPassword) return
 
         val eventPackage = event.packageName?.toString().orEmpty()
-        if (eventPackage.isBlank() || eventPackage == packageName) return
+        if (eventPackage.isBlank()) return
 
         val text = source.text?.toString() ?: return
         if (text.isBlank()) return
