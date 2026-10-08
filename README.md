@@ -1,82 +1,92 @@
 # Khmer Sync
 
-Khmer Sync is an Android keyboard/IME prototype that lets people type **Romanized Khmer using English letters** and convert it into Khmer script.
+Khmer Sync converts **Romanized Khmer typed with English letters** into Khmer script.
+
+The recommended mode keeps **Gboard (or another normal keyboard) as the default**. Khmer Sync runs as an Android Accessibility service and replaces only high-confidence Romanized-Khmer chunks after Space or punctuation.
 
 Examples:
 
 - `nh jg tv psa` → `ខ្ញុំចង់ទៅផ្សារ`
 - `nh jg tv psa thinh ey nham` → `ខ្ញុំចង់ទៅផ្សារទិញអីញ៉ាំ`
 - `nh ot dg te` → `ខ្ញុំអត់ដឹងទេ`
-- `realy` → `really` (starter English typo correction)
 
-## V1 behavior
+## Recommended: Gboard Integration
 
-- Normal QWERTY keyboard.
-- Romanized Khmer suggestions appear above the keyboard.
-- Confident multi-word Khmer can auto-convert when Space is pressed.
-- After Khmer context is established, known Romanized Khmer words can auto-convert one by one.
-- English text stays English.
-- A small starter English typo map corrects common mistakes.
-- Password and PIN fields disable conversion/suggestions.
-- No Internet permission and no typed-text logging.
+1. Install the APK.
+2. Keep **Gboard** selected as the default keyboard.
+3. Open **Khmer Sync**.
+4. Tap **Turn on Gboard Integration**.
+5. Android opens Accessibility settings; enable **Khmer Sync • Gboard Integration** once.
+6. Return to Khmer Sync and type in the test field using Gboard.
 
-## Setup
+Android does not allow apps to silently grant themselves Accessibility access, so this one approval cannot be skipped.
 
-1. Open the project in Android Studio.
-2. Use JDK 17.
-3. The project uses Android Gradle Plugin 9.4.0 and compile/target SDK 37.
-4. If you want a Gradle wrapper for CLI builds, run:
-   ```bash
-   gradle wrapper --gradle-version 9.6.0
-   ```
-5. Build and install the app.
-6. Open **Khmer Sync**.
-7. Tap **Enable Khmer Sync Keyboard**.
-8. Enable it in Android settings.
-9. Return to the app and tap **Choose Khmer Sync Keyboard**.
+### Safety behavior
 
-## Extending Khmer recognition
+- Password/PIN fields are ignored.
+- Conversion is local.
+- The Android app currently has no `INTERNET` permission.
+- Typed text is not logged or uploaded.
+- Single ambiguous words such as `tv` are not aggressively converted unless Khmer context already exists.
+- Mixed text such as `bro nh jg tv psa` can preserve the English portion and convert the strong Khmer suffix.
 
-The converter is deliberately data-driven so Cambodian texting variants can be added without changing the IME code.
+## Fallback: Khmer Sync Keyboard
+
+The original custom IME remains available for testing/fallback. You do **not** need to select it when Gboard Integration is enabled.
+
+## Dictionary
 
 Word variants:
 
 `app/src/main/assets/roman_khmer_dictionary.json`
 
-Phrase overrides/context:
+Phrase overrides:
 
 `app/src/main/assets/roman_khmer_phrases.json`
 
-For example:
+MongoDB seed tooling:
 
-```json
-{
-  "nh": "ខ្ញុំ",
-  "jg": "ចង់",
-  "tv": "ទៅ",
-  "psa": "ផ្សារ"
-}
-```
+`tools/seed_mongodb.py`
+
+The Mongo URI must stay in an environment variable or GitHub secret named `MONGO_URI`; never place it inside the APK or repository.
 
 ## Architecture
 
 ```
-English letters
-      |
-      v
-KhmerImeService
-      |
-      +--> RomanKhmerConverter --> Khmer suggestion / auto-convert
-      |
-      +--> EnglishCorrectionEngine --> English typo suggestion/correction
-      |
-      v
-Android InputConnection
-      |
-      v
-Messenger / Telegram / Chrome / Notes / etc.
+Gboard / Samsung Keyboard / other IME
+                |
+                v
+        Android text field
+                |
+        Space / punctuation
+                |
+                v
+KhmerAccessibilityService
+                |
+                v
+RomanKhmerConverter
+                |
+     high-confidence match?
+          |           |
+         yes          no
+          |           |
+          v           v
+ replace chunk     leave text
+          |
+          v
+      Khmer text
 ```
 
-## Next steps
+## Build
 
-V1 is intentionally a prototype. The important next work is collecting real Romanized-Khmer typing samples and improving ranking/context. After that we can add a much larger English dictionary, personalized local learning, better punctuation/number layouts, emoji, themes, and optional on-device ML.
+GitHub Actions builds a debug APK on pushes to `main`.
+
+Local build requirements:
+
+- JDK 17
+- Android SDK 37
+- Gradle 9.6.0
+
+```bash
+gradle :app:assembleDebug
+```

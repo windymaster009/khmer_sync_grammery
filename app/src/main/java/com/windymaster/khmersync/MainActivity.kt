@@ -1,10 +1,12 @@
 package com.windymaster.khmersync
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
@@ -17,7 +19,8 @@ import android.widget.TextView
 
 class MainActivity : Activity() {
 
-    private lateinit var statusView: TextView
+    private lateinit var gboardStatusView: TextView
+    private lateinit var legacyKeyboardStatusView: TextView
     private lateinit var autoSwitch: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +29,7 @@ class MainActivity : Activity() {
         val scroll = ScrollView(this)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(40), dp(24), dp(32))
+            setPadding(dp(24), dp(36), dp(24), dp(32))
         }
         scroll.addView(root)
 
@@ -37,40 +40,39 @@ class MainActivity : Activity() {
         })
 
         root.addView(TextView(this).apply {
-            text = "Type Khmer naturally with English letters. Khmer Sync converts Romanized Khmer into Khmer script while keeping normal English typing available."
+            text = "Keep using Gboard. Khmer Sync converts Romanized Khmer in the background after a one-time Android permission."
             textSize = 16f
-            setPadding(0, dp(12), 0, dp(24))
+            setPadding(0, dp(12), 0, dp(22))
         })
 
-        statusView = TextView(this).apply {
-            textSize = 16f
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            setBackgroundColor(Color.rgb(242, 244, 248))
-        }
-        root.addView(statusView, fullWidth())
+        root.addView(TextView(this).apply {
+            text = "Recommended • Gboard Integration"
+            textSize = 20f
+            setTextColor(Color.rgb(25, 25, 30))
+        })
+
+        gboardStatusView = statusCard()
+        root.addView(gboardStatusView, marginTop(10))
 
         root.addView(Button(this).apply {
-            text = "1. Enable Khmer Sync Keyboard"
+            text = "Turn on Gboard Integration"
             isAllCaps = false
             setOnClickListener {
-                startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
         }, marginTop())
 
-        root.addView(Button(this).apply {
-            text = "2. Choose Khmer Sync Keyboard"
-            isAllCaps = false
-            setOnClickListener {
-                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.showInputMethodPicker()
-            }
-        }, marginTop())
+        root.addView(TextView(this).apply {
+            text = "Android requires this one-time Accessibility approval. After it is enabled, leave Gboard as your default keyboard."
+            textSize = 14f
+            setPadding(0, dp(10), 0, dp(8))
+        })
 
         autoSwitch = Switch(this).apply {
             text = "Auto-convert confident Khmer on Space"
             textSize = 16f
             isChecked = prefs().getBoolean(PREF_AUTO_CONVERT, true)
-            setPadding(0, dp(20), 0, dp(12))
+            setPadding(0, dp(14), 0, dp(12))
             setOnCheckedChangeListener { _, checked ->
                 prefs().edit().putBoolean(PREF_AUTO_CONVERT, checked).apply()
             }
@@ -78,9 +80,9 @@ class MainActivity : Activity() {
         root.addView(autoSwitch, fullWidth())
 
         root.addView(TextView(this).apply {
-            text = "Try it"
+            text = "Try it with Gboard"
             textSize = 20f
-            setPadding(0, dp(24), 0, dp(8))
+            setPadding(0, dp(20), 0, dp(8))
         })
 
         root.addView(EditText(this).apply {
@@ -94,7 +96,35 @@ class MainActivity : Activity() {
         ))
 
         root.addView(TextView(this).apply {
-            text = "Privacy: V1 has no Internet permission and does not store what you type. Conversion is disabled in password/PIN fields."
+            text = "Fallback • Khmer Sync Keyboard"
+            textSize = 18f
+            setPadding(0, dp(26), 0, dp(6))
+        })
+
+        legacyKeyboardStatusView = TextView(this).apply {
+            textSize = 14f
+        }
+        root.addView(legacyKeyboardStatusView, fullWidth())
+
+        root.addView(Button(this).apply {
+            text = "Enable fallback keyboard"
+            isAllCaps = false
+            setOnClickListener {
+                startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+            }
+        }, marginTop(8))
+
+        root.addView(Button(this).apply {
+            text = "Choose fallback keyboard"
+            isAllCaps = false
+            setOnClickListener {
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showInputMethodPicker()
+            }
+        }, marginTop(8))
+
+        root.addView(TextView(this).apply {
+            text = "Privacy: conversion runs locally. Khmer Sync currently has no Internet permission, stores no typed text, and ignores password/PIN fields."
             textSize = 14f
             setPadding(0, dp(22), 0, 0)
         })
@@ -108,16 +138,55 @@ class MainActivity : Activity() {
     }
 
     private fun refreshStatus() {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        val enabled = imm.enabledInputMethodList.any { it.packageName == packageName }
-        val current = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        val selected = current?.startsWith("$packageName/") == true
+        val accessibilityEnabled = isAccessibilityServiceEnabled()
 
-        statusView.text = when {
-            selected -> "✓ Khmer Sync is enabled and selected as your current keyboard."
-            enabled -> "✓ Khmer Sync is enabled. Choose it as your current keyboard."
-            else -> "Setup needed: enable Khmer Sync, then select it as your keyboard."
+        gboardStatusView.text = if (accessibilityEnabled) {
+            "✓ Gboard Integration is ON. Keep Gboard selected and type normally."
+        } else {
+            "Setup needed: turn on Khmer Sync under Android Accessibility."
         }
+
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        val fallbackEnabled = imm.enabledInputMethodList.any { it.packageName == packageName }
+        val current = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.DEFAULT_INPUT_METHOD
+        )
+        val fallbackSelected = current?.startsWith("$packageName/") == true
+
+        legacyKeyboardStatusView.text = when {
+            fallbackSelected -> "Fallback keyboard is currently selected."
+            fallbackEnabled -> "Fallback keyboard is enabled but not selected."
+            else -> "Fallback keyboard is off. That is fine when Gboard Integration is ON."
+        }
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val expected = ComponentName(
+            this,
+            KhmerAccessibilityService::class.java
+        ).flattenToString()
+
+        val enabled = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+
+        val splitter = TextUtils.SimpleStringSplitter(':')
+        splitter.setString(enabled)
+        while (splitter.hasNext()) {
+            if (splitter.next().equals(expected, ignoreCase = true)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun statusCard() = TextView(this).apply {
+        textSize = 16f
+        setPadding(dp(16), dp(16), dp(16), dp(16))
+        setBackgroundColor(Color.rgb(242, 244, 248))
     }
 
     private fun prefs() = getSharedPreferences(PREFS, MODE_PRIVATE)
@@ -127,8 +196,8 @@ class MainActivity : Activity() {
         ViewGroup.LayoutParams.WRAP_CONTENT
     )
 
-    private fun marginTop() = fullWidth().apply {
-        topMargin = dp(12)
+    private fun marginTop(value: Int = 12) = fullWidth().apply {
+        topMargin = dp(value)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

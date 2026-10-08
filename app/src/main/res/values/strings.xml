@@ -2,4 +2,6 @@
     <string name="app_name">Khmer Sync</string>
     <string name="ime_name">Khmer Sync Keyboard</string>
     <string name="subtype_name">Khmer Sync</string>
+    <string name="accessibility_service_name">Khmer Sync • Gboard Integration</string>
+    <string name="accessibility_description">Keep using Gboard or your normal keyboard while Khmer Sync converts high-confidence Romanized Khmer into Khmer script. Password fields are ignored.</string>
 </resources>

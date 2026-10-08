@@ -15,6 +15,22 @@
             </intent-filter>
         </activity>
 
+        <!-- Recommended mode: keep Gboard (or any keyboard) as the default. -->
+        <service
+            android:name=".KhmerAccessibilityService"
+            android:exported="true"
+            android:label="@string/accessibility_service_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service" />
+        </service>
+
+        <!-- Fallback/testing mode: Khmer Sync can still be selected as an IME. -->
         <service
             android:name=".KhmerImeService"
             android:exported="true"
