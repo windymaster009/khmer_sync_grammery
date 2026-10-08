@@ -8,8 +8,10 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from pymongo import ASCENDING, MongoClient, ReturnDocument, UpdateOne
+from dotenv import load_dotenv
 
 
+load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI is required")
