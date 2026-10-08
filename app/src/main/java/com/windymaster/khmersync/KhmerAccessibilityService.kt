@@ -6,16 +6,6 @@ import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
-/**
- * Gboard-friendly mode.
- *
- * Khmer Sync does not become the active keyboard. Instead, this service watches
- * normal editable text fields and converts high-confidence Romanized Khmer only
- * after the user commits a boundary such as Space or punctuation.
- *
- * Password fields are ignored. The app currently has no INTERNET permission, so
- * typed text never leaves the device.
- */
 class KhmerAccessibilityService : AccessibilityService() {
 
     private lateinit var converter: RomanKhmerConverter
@@ -39,6 +29,14 @@ class KhmerAccessibilityService : AccessibilityService() {
         val source = event.source ?: return
         if (!source.isEditable || source.isPassword || event.isPassword) return
 
+        val sourceId = source.viewIdResourceName.orEmpty()
+        if (
+            sourceId == "$packageName:id/collector_input" ||
+            sourceId == "$packageName:id/dataset_api_url"
+        ) {
+            return
+        }
+
         val eventPackage = event.packageName?.toString().orEmpty()
         if (eventPackage.isBlank()) return
 
@@ -48,7 +46,6 @@ class KhmerAccessibilityService : AccessibilityService() {
         val cursor = source.textSelectionStart
         if (cursor <= 0 || cursor > text.length) return
 
-        // ACTION_SET_TEXT triggers another text-changed event. Ignore our own echo.
         val now = SystemClock.uptimeMillis()
         if (
             now - lastAppliedAtMs < SELF_CHANGE_GUARD_MS &&
@@ -108,9 +105,6 @@ class KhmerAccessibilityService : AccessibilityService() {
         val tokenMatches = TOKEN.findAll(segment).toList()
         if (tokenMatches.isEmpty()) return null
 
-        // Longest safe suffix wins. This lets:
-        // "bro nh jg tv psa" -> "bro ខ្ញុំចង់ទៅផ្សារ"
-        // while avoiding aggressive conversion of ordinary English.
         for (tokenIndex in tokenMatches.indices) {
             val relativeStart = tokenMatches[tokenIndex].range.first
             val candidateText = segment.substring(relativeStart).trim()

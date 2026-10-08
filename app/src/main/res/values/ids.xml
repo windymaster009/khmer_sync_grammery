@@ -1,0 +1,4 @@
+<resources>
+    <item name="collector_input" type="id" />
+    <item name="dataset_api_url" type="id" />
+</resources>

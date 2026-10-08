@@ -96,6 +96,26 @@ class MainActivity : Activity() {
         ))
 
         root.addView(TextView(this).apply {
+            text = "Help build the Khmer dataset"
+            textSize = 20f
+            setPadding(0, dp(26), 0, dp(6))
+        })
+
+        root.addView(TextView(this).apply {
+            text = "Friends can intentionally submit the Romanized Khmer they normally type. We store it untranslated first, then translate/review the most common words and phrases later."
+            textSize = 14f
+            setPadding(0, 0, 0, dp(8))
+        })
+
+        root.addView(Button(this).apply {
+            text = "Contribute Roman Khmer"
+            isAllCaps = false
+            setOnClickListener {
+                startActivity(Intent(this@MainActivity, CollectorActivity::class.java))
+            }
+        }, fullWidth())
+
+        root.addView(TextView(this).apply {
             text = "Fallback • Khmer Sync Keyboard"
             textSize = 18f
             setPadding(0, dp(26), 0, dp(6))
@@ -124,7 +144,7 @@ class MainActivity : Activity() {
         }, marginTop(8))
 
         root.addView(TextView(this).apply {
-            text = "Privacy: conversion runs locally. Khmer Sync currently has no Internet permission, stores no typed text, and ignores password/PIN fields."
+            text = "Privacy: normal Gboard conversion stays on-device. Only text deliberately submitted from the Dataset Collector is sent to the dataset server. Password/PIN fields are ignored."
             textSize = 14f
             setPadding(0, dp(22), 0, 0)
         })

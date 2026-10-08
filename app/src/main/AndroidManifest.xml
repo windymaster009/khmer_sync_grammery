@@ -1,10 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".CollectorActivity"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
@@ -15,7 +21,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Recommended mode: keep Gboard (or any keyboard) as the default. -->
         <service
             android:name=".KhmerAccessibilityService"
             android:exported="true"
@@ -30,7 +35,6 @@
                 android:resource="@xml/accessibility_service" />
         </service>
 
-        <!-- Fallback/testing mode: Khmer Sync can still be selected as an IME. -->
         <service
             android:name=".KhmerImeService"
             android:exported="true"
